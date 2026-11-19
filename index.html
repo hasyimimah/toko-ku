@@ -3,27 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TOKO KU</title>
+<title>Toko Ku - Hasyim</title>
 <style>
-body{font-family:Arial,sans-serif;margin:0;background:#f9fafb}
-.header{background:#111827;color:white;text-align:center;padding:30px 15px}
-.header h1{margin:0;font-size:32px}
-.card{background:#fff7ed;border:1px solid #fdba74;border-radius:16px;max-width:500px;margin:20px auto;padding:25px;text-align:center}
-.price{font-size:28px;font-weight:bold;color:#ea580c}
-.btn{display:block;background:#16a34a;color:white;padding:15px;border-radius:10px;text-decoration:none;font-weight:bold;margin-top:15px}
-.box{max-width:500px;margin:auto;padding:0 20px}
-.footer{background:#111827;color:white;text-align:center;padding:15px;margin-top:20px}
+body{font-family:Arial,sans-serif;margin:0;background:#f5f5f5}
+header{background:#111;color:#fff;padding:15px;text-align:center}
+header h1{margin:0;font-size:22px}
+#userArea{margin-top:10px}
+#userArea button{background:#fff;color:#111;border:0;padding:8px 14px;border-radius:20px;font-weight:bold;cursor:pointer}
+#userArea img{width:32px;height:32px;border-radius:50%;vertical-align:middle}
+#userArea span{margin:0 8px;font-weight:bold}
+.produk{background:#fff;margin:12px;padding:14px;border-radius:12px;box-shadow:0 1px 5px rgba(0,0,0,.1)}
+.produk h3{margin:0 0 5px}
+.harga{color:#e91e63;font-weight:bold;font-size:18px}
+.beli{display:block;text-align:center;background:#25D366;color:#fff;padding:10px;border-radius:8px;text-decoration:none;font-weight:bold;margin-top:10px}
 </style>
 </head>
 <body>
-<div class="header"><h1>TOKO KU</h1><p>Jualan Digital • Ebook • Template</p></div>
-<div id="list"><p style="text-align:center">Memuat produk...</p></div>
-<div class="box"><h3>Kenapa Beli Di Sini?</h3><p>✅ Langsung dikirim via WA</p><p>✅ Bisa dibaca di HP</p><p>✅ Update gratis</p></div>
-<div class="footer">Cara Beli: Klik Beli → Chat WA → Transfer → Ebook Dikirim</div>
+<header>
+<h1>🛍️ TOKO KU</h1>
+<div id="userArea">
+<button id="btnLogin">Login dengan Google</button>
+</div>
+</header>
+<div id="list">Memuat produk...</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCcRZL7cOp1Si5OahbMd0DFuxrQg7eFHuk",
@@ -37,27 +44,39 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const WA = "6281226132798";
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
-async function load(){
-  try{
-    const snap = await getDocs(collection(db, "products"));
-    const box = document.getElementById("list");
-    box.innerHTML = "";
-    snap.forEach(d=>{
-      const p = d.data();
-      const nama = p.nama || p.name || "Produk";
-      const harga = p.harga || p.price || 0;
-      const desc = p.deskripsi || p.description || "";
-      const hargaFormat = Number(harga).toLocaleString("id-ID");
-      box.innerHTML += `<div class="card"><h2>${nama}</h2><p>${desc}</p><div class="price">Rp ${hargaFormat}</div><a class="btn" href="https://wa.me/${WA}?text=Halo%20kak,%20saya%20mau%20beli%20${encodeURIComponent(nama)}%20Rp%20${hargaFormat}">BELI VIA WHATSAPP</a></div>`;
-    });
-    if(box.innerHTML==="") box.innerHTML="<p style='text-align:center'>Belum ada produk di collection 'products'</p>";
-  }catch(e){
-    document.getElementById("list").innerHTML = "<p style='text-align:center;color:red'>Gagal load: "+e.message+"<br>Cek Rules Firestore harus Allow Read</p>";
-  }
+const userArea = document.getElementById('userArea');
+
+async function doLogin(){
+  try { await signInWithPopup(auth, provider); }
+  catch(e){ alert("Gagal login: " + e.message); }
 }
-load();
+document.getElementById('btnLogin').onclick = doLogin;
+
+onAuthStateChanged(auth, (user) => {
+  if(user){
+    userArea.innerHTML = `<img src="${user.photoURL}"><span>Halo, ${user.displayName}!</span><button id="btnLogout">Logout</button>`;
+    document.getElementById('btnLogout').onclick = () => signOut(auth);
+  } else {
+    userArea.innerHTML = `<button id="btnLogin2">Login dengan Google</button>`;
+    document.getElementById('btnLogin2').onclick = doLogin;
+  }
+});
+
+const list = document.getElementById('list');
+try {
+  const snap = await getDocs(collection(db, "products"));
+  if(snap.empty){ list.innerHTML = "Belum ada produk"; }
+  else {
+    list.innerHTML = "";
+    snap.forEach(doc => {
+      const p = doc.data();
+      list.innerHTML += `<div class="produk"><h3>${p.nama}</h3><p>${p.deskripsi||''}</p><div class="harga">Rp ${Number(p.harga).toLocaleString('id-ID')}</div><a class="beli" href="https://wa.me/6281234567890?text=Halo kak, saya mau beli ${encodeURIComponent(p.nama)} Rp ${p.harga}" target="_blank">BELI VIA WHATSAPP</a></div>`;
+    });
+  }
+} catch(e){ list.innerHTML = "Gagal load: " + e.message; }
 </script>
 </body>
 </html>
