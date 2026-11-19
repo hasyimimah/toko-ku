@@ -3,37 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TOKO KU - Ebook Jualan Online</title>
+<title>TOKO KU</title>
 <style>
 body{font-family:Arial,sans-serif;margin:0;background:#f9fafb}
 .header{background:#111827;color:white;text-align:center;padding:30px 15px}
 .header h1{margin:0;font-size:32px}
 .card{background:#fff7ed;border:1px solid #fdba74;border-radius:16px;max-width:500px;margin:20px auto;padding:25px;text-align:center}
-.price{font-size:32px;font-weight:bold;color:#ea580c}
+.price{font-size:28px;font-weight:bold;color:#ea580c}
 .btn{display:block;background:#16a34a;color:white;padding:15px;border-radius:10px;text-decoration:none;font-weight:bold;margin-top:15px}
 .box{max-width:500px;margin:auto;padding:0 20px}
 .footer{background:#111827;color:white;text-align:center;padding:15px;margin-top:20px}
 </style>
 </head>
 <body>
-<div class="header">
-<h1>TOKO KU</h1>
-<p>Jualan Digital • Ebook • Template</p>
-</div>
-<div class="card">
-<h2>EBOOK JUALAN ONLINE</h2>
-<p>Belajar jualan online untuk pemula</p>
-<p>Dari nol sampai bisa closing pertama</p>
-<div class="price">Rp 25.000</div>
-<p>⭐ 4.9 • Terjual 120+ • Langsung Download</p>
-<a class="btn" href="https://wa.me/6281226132798?text=Halo%20kak,%20saya%20mau%20beli%20Ebook%20Jualan%20Online%20Rp%2025.000">BELI VIA WHATSAPP</a>
-</div>
-<div class="box">
-<h3>Kenapa Beli Di Sini?</h3>
-<p>✅ Langsung dikirim via WA / Email</p>
-<p>✅ Bisa dibaca di HP</p>
-<p>✅ Update gratis seumur hidup</p>
-</div>
+<div class="header"><h1>TOKO KU</h1><p>Jualan Digital • Ebook • Template</p></div>
+<div id="list"><p style="text-align:center">Memuat produk...</p></div>
+<div class="box"><h3>Kenapa Beli Di Sini?</h3><p>✅ Langsung dikirim via WA</p><p>✅ Bisa dibaca di HP</p><p>✅ Update gratis</p></div>
 <div class="footer">Cara Beli: Klik Beli → Chat WA → Transfer → Ebook Dikirim</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCcRZL7cOp1Si5OahbMd0DFuxrQg7eFHuk",
+  authDomain: "toko-ku-7d774.firebaseapp.com",
+  projectId: "toko-ku-7d774",
+  storageBucket: "toko-ku-7d774.firebasestorage.app",
+  messagingSenderId: "789697068494",
+  appId: "1:789697068494:web:eb620edd242374af4b7f9f",
+  measurementId: "G-2NSPWZJGTM"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const WA = "6281226132798";
+
+async function load(){
+  try{
+    const snap = await getDocs(collection(db, "products"));
+    const box = document.getElementById("list");
+    box.innerHTML = "";
+    snap.forEach(d=>{
+      const p = d.data();
+      const nama = p.nama || p.name || "Produk";
+      const harga = p.harga || p.price || 0;
+      const desc = p.deskripsi || p.description || "";
+      const hargaFormat = Number(harga).toLocaleString("id-ID");
+      box.innerHTML += `<div class="card"><h2>${nama}</h2><p>${desc}</p><div class="price">Rp ${hargaFormat}</div><a class="btn" href="https://wa.me/${WA}?text=Halo%20kak,%20saya%20mau%20beli%20${encodeURIComponent(nama)}%20Rp%20${hargaFormat}">BELI VIA WHATSAPP</a></div>`;
+    });
+    if(box.innerHTML==="") box.innerHTML="<p style='text-align:center'>Belum ada produk di collection 'products'</p>";
+  }catch(e){
+    document.getElementById("list").innerHTML = "<p style='text-align:center;color:red'>Gagal load: "+e.message+"<br>Cek Rules Firestore harus Allow Read</p>";
+  }
+}
+load();
+</script>
 </body>
 </html>
